@@ -1,0 +1,62 @@
+namespace DeutschJozsa {
+    open Microsoft.Quantum.Diagnostics;
+    open Microsoft.Quantum.Canon;
+    
+    // Elaborar el oráculo para la función booleana f
+    operation Oracle(f : (Qubit[] => Bool), x : Qubit[]) : Unit {
+        // Aplicar la función booleana f al registro de entrada x
+        let fx = f(x);
+        // Si la función es constante, aplicar la compuerta X a todos los qubits de salida
+        if (fx) {
+            X(All(x));
+        }
+    }
+    
+    // Elaborar el algoritmo de Deutsch-Jozsa
+    operation DeutschJozsaAlgorithm(f : (Qubit[] => Bool)) : Bool {
+        // Definir el número de qubits de entrada a la función
+        let n = Length(f.Inputs);
+        
+        // Crear el registro de entrada y salida para el oráculo
+        using (x = Qubit[n]) {
+            let y = Qubit();
+            
+            // Inicializar los qubits de entrada en el estado |0⟩
+            X(All(x));
+            
+            // Aplicar la compuerta Hadamard a los qubits de entrada
+            H(All(x));
+            
+            // Aplicar el oráculo para la función f
+            Oracle(f, x);
+            
+            // Aplicar la compuerta Hadamard a los qubits de entrada
+            H(All(x));
+            
+            // Medir los qubits de entrada para determinar si la función es constante o balanceada
+            let result = M(x);
+            
+            // Limpiar los qubits auxiliares
+            ResetAll([x, y]);
+            
+            // Devolver true si la función es constante y false si es balanceada
+            return result == Zero;
+        }
+    }
+}
+---------------------------------------------------------------------------------
+namespace DeutschJozsaTest {
+    open DeutschJozsa;
+    
+    // Definir una función booleana para probar el algoritmo
+    function TestFunction(x : Qubit[]) : Bool {
+        // La función devuelve true si el número de qubits de entrada es par y false si es impar
+        return Length(x) % 2 == 0;
+    }
+    
+    // Ejecutar el algoritmo de Deutsch-Jozsa en la función de prueba
+    operation RunTest() : Unit {
+        let result = DeutschJozsaAlgorithm(TestFunction);
+        Message($"The function is {(if result then "constant" else "balanced")}.");
+    }
+}
